@@ -12,6 +12,11 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/imgs", StaticFiles(directory="imgs"), name='img_avatar2.jpg')
 
 
+@app.get("/", response_class=HTMLResponse)
+def login(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
+
+
 @app.get("/login", response_class=HTMLResponse)
 def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
@@ -66,18 +71,22 @@ async def contact_us(request: Request, firstname: str = Form(...),
                      email: str = Form(...),
                      phone: str = Form(...),
                      summary: str = Form(...),
-                     detail: str = Form(...)):
-    print(firstname, lastname, detail, phone, email)
+                     detail: str = Form(...),
+                     username: str = Form(...)):
+    print(firstname, lastname, detail, phone, email)  ### Create JIRA ticket logging
     from utils.jira_info import fields
     fields["project"]["key"] = "MOVIES"
     fields["issuetype"]["name"] = "Task"
-    fields["description"] = email
-    fields["description"] = phone
+    fields["customfield_10043"] = email
+    fields["customfield_10040"] = phone
     fields["summary"] = summary
     fields["description"] = detail
+    fields["customfield_10034"] = [f"{firstname}-{lastname}"]
+    fields["customfield_10041"] = username
+
     print(fields)
 
     moviejira = JiraAPI.create_conn()
     moviejira.create_issue(fields)
 
-    # return read_from_table(username)
+    return templates.TemplateResponse("register.html", {"request": request})
